@@ -33,7 +33,7 @@ jobs:
             sudo apt-get install -y wine32 wine64 rpm
       - run:
           name: Build for Windows
-          command: npm run make
+          command: npm run make -- --platform win32
       - store_artifacts:
           path: out/make
           destination: windows-builds

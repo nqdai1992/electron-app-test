@@ -1,70 +1,46 @@
 version: 2.1
-executors:
-  macos-executor:
-    macos:
-      xcode: 15.4.0
-    resource_class: m2pro.medium
-  windows-executor:
-    machine:
-      image: windows-server-2022-gui:current
-    resource_class: windows.medium
 
-commands:
-  install-dependencies:
-    steps:
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "package.json" }}
-            - v1-dependencies-
-      - run:
-          name: Install Dependencies
-          command: npm install
-      - save_cache:
-          paths:
-            - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
+orbs:
+  node: circleci/node@5.1.0
+
 jobs:
   build-macos:
-    executor: macos-executor
+    macos:
+      xcode: 15.4.0
     steps:
       - checkout
-      - install-dependencies
+      - node/install:
+          node-version: '18.18.0'
+      - node/install-packages
       - run:
-          name: Install macOS Certificates
-          command: |
-            # Add your certificate installation steps here if needed
-            echo "Setting up certificates..."
-      - run:
-          name: Build macOS App
-          command: npm run make -- --platform=darwin
+          name: Build for macOS
+          command: npm run make
       - store_artifacts:
           path: out/make
           destination: macos-builds
 
   build-windows:
-    executor: windows-executor
+    docker:
+      - image: cimg/node:18.18.0
     steps:
       - checkout
+      - node/install-packages
       - run:
-          name: Install Node.js
+          name: Install Build Dependencies
           command: |
-            choco install nodejs -y --version=18.15.0
-      - install-dependencies
+            sudo dpkg --add-architecture i386
+            sudo apt-get update
+            sudo apt-get install -y wine32 wine64 rpm
       - run:
-          name: Build Windows App
-          command: npm run make -- --platform=win32
+          name: Build for Windows
+          command: npm run make
       - store_artifacts:
           path: out/make
           destination: windows-builds
+
 workflows:
   version: 2
-  build-and-test:
+  build:
     jobs:
-      - build-macos:
-          filters:
-            branches:
-              only: main
-      - build-windows:
-          filters:
-            branches:
-              only: main
+      - build-macos
+      - build-windows

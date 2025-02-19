@@ -26,11 +26,11 @@ jobs:
       - checkout
       - node/install-packages
       - run:
-          name: Install Wine
+          name: Install Build Dependencies
           command: |
             sudo dpkg --add-architecture i386
             sudo apt-get update
-            sudo apt-get install -y wine32 wine64
+            sudo apt-get install -y wine32 wine64 rpm
       - run:
           name: Build for Windows
           command: npm run make
